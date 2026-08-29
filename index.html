@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="robots" content="noindex, nofollow">
+<title>チャート評価</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="progress-row">
+      <span id="counter">- / -</span>
+      <button id="download-btn" type="button">結果を保存</button>
+    </div>
+    <div class="progress-track"><div id="progress-bar"></div></div>
+  </header>
+
+  <main>
+    <div id="chart-area"></div>
+    <p id="hint">この値動きは「買いたい上昇」に見えますか？</p>
+  </main>
+
+  <footer>
+    <div class="button-row">
+      <button class="label-btn bad" data-label="bad" type="button">
+        <span class="mark">✕</span><span class="text">微妙</span>
+      </button>
+      <button class="label-btn unclear" data-label="unclear" type="button">
+        <span class="mark">？</span><span class="text">わからない</span>
+      </button>
+      <button class="label-btn good" data-label="good" type="button">
+        <span class="mark">◯</span><span class="text">良い</span>
+      </button>
+    </div>
+    <div class="sub-row">
+      <button id="back-btn" type="button">← 1つ戻る</button>
+      <span id="status"></span>
+    </div>
+  </footer>
+</div>
+
+<div id="done-screen" hidden>
+  <h1>お疲れさまでした</h1>
+  <p id="done-summary"></p>
+  <button id="download-btn-2" type="button">結果をダウンロード</button>
+  <button id="review-btn" type="button">最初から見直す</button>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,181 @@
+:root {
+  --bg: #12151a;
+  --panel: #1b2028;
+  --text: #e8eaed;
+  --muted: #99a0ab;
+  --up: #26a69a;
+  --down: #ef5350;
+  --good: #2e7d5b;
+  --bad: #8c3a3a;
+  --unclear: #4a5160;
+  --accent: #4c72b0;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+  overscroll-behavior: none;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
+
+header {
+  padding: 10px 14px 6px;
+  flex-shrink: 0;
+}
+
+.progress-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+#counter {
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+#download-btn {
+  background: none;
+  border: 1px solid var(--muted);
+  color: var(--muted);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.progress-track {
+  height: 4px;
+  background: #2a3038;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+#progress-bar {
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  transition: width 0.15s ease-out;
+}
+
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 0;
+  padding: 4px 10px;
+}
+
+/* 縦に伸ばしすぎると値動きが誇張されて見えるため、横長寄りの比率に制限する
+   (スマホ縦画面で flex:1 のまま伸ばすと 1:2 近くになり、判断を歪める) */
+#chart-area {
+  flex: 1;
+  min-height: 0;
+  max-height: 62vw;
+  align-self: center;
+  width: 100%;
+  background: var(--panel);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+#chart-area svg { display: block; width: 100%; height: 100%; }
+
+#hint {
+  margin: 8px 0 4px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+footer {
+  flex-shrink: 0;
+  padding: 0 10px calc(10px + env(safe-area-inset-bottom));
+}
+
+.button-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.label-btn {
+  min-height: 76px;
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  transition: transform 0.08s;
+}
+
+.label-btn:active { transform: scale(0.96); }
+.label-btn .mark { font-size: 26px; line-height: 1; }
+.label-btn .text { font-size: 13px; }
+
+.label-btn.good { background: var(--good); }
+.label-btn.bad { background: var(--bad); }
+.label-btn.unclear { background: var(--unclear); }
+
+.sub-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  min-height: 22px;
+}
+
+#back-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 14px;
+  padding: 4px 8px;
+}
+
+#back-btn:disabled { opacity: 0.3; }
+
+#status { font-size: 12px; color: var(--muted); }
+
+#done-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100dvh;
+  gap: 18px;
+  padding: 24px;
+  text-align: center;
+}
+
+#done-screen h1 { font-size: 22px; margin: 0; }
+#done-summary { color: var(--muted); font-size: 15px; margin: 0; line-height: 1.7; }
+
+#done-screen button {
+  min-width: 220px;
+  min-height: 56px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  background: var(--accent);
+  color: #fff;
+}
+
+#review-btn { background: var(--unclear); }
