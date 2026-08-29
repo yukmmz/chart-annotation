@@ -79,12 +79,13 @@ main {
   padding: 4px 10px;
 }
 
-/* 縦に伸ばしすぎると値動きが誇張されて見えるため、横長寄りの比率に制限する
-   (スマホ縦画面で flex:1 のまま伸ばすと 1:2 近くになり、判断を歪める) */
+/* 縦に伸ばしすぎると値動きが誇張されて見えるため、おおむね 4:3 程度に収める
+   (スマホ縦画面で flex:1 のまま伸ばすと 1:2 近くになり、判断を歪める)。
+   min-heightで潰れすぎも防ぎ、画面が広い端末では余白ではなくチャートを大きくする。 */
 #chart-area {
   flex: 1;
-  min-height: 0;
-  max-height: 62vw;
+  min-height: min(75vw, 58dvh);
+  max-height: min(105vw, 72dvh);
   align-self: center;
   width: 100%;
   background: var(--panel);
