@@ -7,8 +7,9 @@
  */
 'use strict';
 
-const STORAGE_KEY = 'annot:v1:labels';
-const CURSOR_KEY = 'annot:v1:cursor';
+// サンプルの中身を差し替えた際はバージョンを上げる(古いラベルが誤って混ざらないように)
+const STORAGE_KEY = 'annot:v2:labels';
+const CURSOR_KEY = 'annot:v2:cursor';
 
 const state = {
   samples: [],
@@ -65,8 +66,9 @@ function renderChart(sample) {
   for (let i = 0; i < bars.length; i++) {
     const [o, h, l, c] = bars[i];
     const cx = padX + step * (i + 0.5);
+    // 日本の慣習に合わせ、陽線(上昇)を赤・陰線(下落)を緑にする
     const up = c >= o;
-    const color = up ? '#26a69a' : '#ef5350';
+    const color = up ? '#ef5350' : '#26a69a';
     const yO = y(o);
     const yC = y(c);
     const top = Math.min(yO, yC);
