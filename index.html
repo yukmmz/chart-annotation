@@ -20,9 +20,15 @@
   <main>
     <div id="chart-area"></div>
     <p id="hint">この値動きは「買いたい上昇」に見えますか？</p>
+    <p id="subhint">薄そうなら💧も（形の評価とは別に記録）</p>
   </main>
 
   <footer>
+    <div class="flag-row">
+      <button id="thin-btn" type="button" aria-pressed="false">
+        <span class="mark">💧</span><span class="text">流動性が微妙そう</span>
+      </button>
+    </div>
     <div class="button-row">
       <button class="label-btn bad" data-label="bad" type="button">
         <span class="mark">✕</span><span class="text">微妙</span>

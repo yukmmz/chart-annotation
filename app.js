@@ -9,14 +9,19 @@
 
 // サンプルの中身を差し替えた際はバージョンを上げる(古いラベルが誤って混ざらないように)。
 // id は毎回 s001 から採番し直すため、キーを据え置くと前回のラベルが新しいチャートに
-// 紐付いてしまう。2026-08-30にサンプルをv2(L通過集合を損益で層化)へ差し替えたのでv3に上げた。
-const STORAGE_KEY = 'annot:v3:labels';
-const CURSOR_KEY = 'annot:v3:cursor';
+// 紐付いてしまう。2026-08-30にサンプルをv2(損益で層化)へ差し替え、さらに流動性フィルタを
+// 緩めてサンプルを取り直した上で💧フラグを追加したのでv4に上げた。
+const STORAGE_KEY = 'annot:v4:labels';
+const CURSOR_KEY = 'annot:v4:cursor';
 
 const state = {
   samples: [],
   labels: {},
   cursor: 0,
+  // 現在のチャートに対する「流動性が微妙そう」フラグ。o/x/? を押した時に一緒に記録する。
+  // 形の良し悪しとは独立した軸なので、排他の4つ目のボタンにはしない
+  // (「形は良いが薄そう」を両方記録できるようにするため)。
+  thin: false,
 };
 
 /* ---------- 永続化 ---------- */
@@ -114,7 +119,26 @@ function render() {
   document.getElementById('back-btn').disabled = state.cursor === 0;
 
   const existing = state.labels[sample.id];
-  setStatus(existing ? `記録済み: ${labelText(existing.label)}（変更できます）` : '');
+  // 既に評価済みのチャートに戻ってきたら、その時の💧の状態を復元する。
+  // 未評価ならフラグはオフから始める(前のチャートの状態を引きずらない)。
+  state.thin = existing ? !!existing.thin : false;
+  renderThinBtn();
+  setStatus(
+    existing
+      ? `記録済み: ${labelText(existing.label)}${existing.thin ? ' + 薄そう' : ''}（変更できます）`
+      : ''
+  );
+}
+
+function renderThinBtn() {
+  const btn = document.getElementById('thin-btn');
+  btn.classList.toggle('active', state.thin);
+  btn.setAttribute('aria-pressed', String(state.thin));
+}
+
+function toggleThin() {
+  state.thin = !state.thin;
+  renderThinBtn();
 }
 
 function labelText(label) {
@@ -127,12 +151,15 @@ function showDone() {
   done.hidden = false;
 
   const counts = { good: 0, bad: 0, unclear: 0 };
+  let thin = 0;
   for (const v of Object.values(state.labels)) {
     if (counts[v.label] !== undefined) counts[v.label]++;
+    if (v.thin) thin++;
   }
   document.getElementById('done-summary').innerHTML =
     `${labeledCount()} 件を評価しました<br>` +
     `良い ${counts.good} ／ 微妙 ${counts.bad} ／ わからない ${counts.unclear}<br>` +
+    `うち「流動性が微妙そう」 ${thin} 件<br>` +
     `<br>下のボタンでJSONを保存して送ってください`;
 }
 
@@ -141,7 +168,7 @@ function showDone() {
 function applyLabel(label) {
   const sample = state.samples[state.cursor];
   if (!sample) return;
-  state.labels[sample.id] = { label, ts: new Date().toISOString() };
+  state.labels[sample.id] = { label, thin: state.thin, ts: new Date().toISOString() };
   state.cursor++;
   persist();
   render();
@@ -200,6 +227,7 @@ async function init() {
   document.querySelectorAll('.label-btn').forEach((btn) => {
     btn.addEventListener('click', () => applyLabel(btn.dataset.label));
   });
+  document.getElementById('thin-btn').addEventListener('click', toggleThin);
   document.getElementById('back-btn').addEventListener('click', goBack);
   document.getElementById('download-btn').addEventListener('click', download);
   document.getElementById('download-btn-2').addEventListener('click', download);

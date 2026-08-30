@@ -107,6 +107,45 @@ footer {
   padding: 0 10px calc(10px + env(safe-area-inset-bottom));
 }
 
+#subhint {
+  margin: 0 0 4px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+  opacity: 0.75;
+}
+
+/* 「流動性が微妙そう」はチャートの形の評価とは別の軸なので、o/x/? とは別行の
+   トグルにする。押しても次へ進まず、o/x/? を押した時に一緒に記録される。 */
+.flag-row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+#thin-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  border: 1.5px solid var(--muted);
+  background: none;
+  color: var(--muted);
+  font-size: 14px;
+  transition: transform 0.08s;
+}
+
+#thin-btn:active { transform: scale(0.96); }
+#thin-btn .mark { font-size: 17px; line-height: 1; }
+
+#thin-btn.active {
+  background: #1e6a8d;
+  border-color: #2f9ac9;
+  color: #fff;
+  font-weight: 600;
+}
+
 .button-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
