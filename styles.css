@@ -88,12 +88,12 @@ main {
 /* 縦に伸ばしすぎると値動きが誇張されて見えるため、おおむね 4:3 程度に収める
    (スマホ縦画面で flex:1 のまま伸ばすと 1:2 近くになり、判断を歪める)。
    min-heightで潰れすぎも防ぎ、画面が広い端末では余白ではなくチャートを大きくする。 */
-/* 理由入力エリアを追加したぶん、チャートの縦幅を詰める(2026-08-30、ユーザー了承済み)。
-   縦横比が極端に崩れると値動きの印象が変わるため、下限は残す。 */
+/* 判定を2択にし💧トグルを廃止したぶん、チャートの縦幅を戻す(2026-08-31)。
+   縦横比が極端に崩れると値動きの印象が変わるため、上下限で挟む。 */
 #chart-area {
   flex: 1;
-  min-height: min(62vw, 40dvh);
-  max-height: min(88vw, 52dvh);
+  min-height: min(70vw, 46dvh);
+  max-height: min(98vw, 60dvh);
   align-self: center;
   width: 100%;
   background: var(--panel);
@@ -123,39 +123,11 @@ footer {
   opacity: 0.75;
 }
 
-/* 「微妙」「わからない」を選んだ理由を残す欄。入力は任意で、記入しなくても
-   o/x/? を押せばそのまま次へ進む(理由を必須にすると1件ごとに手数が増えるため)。
-   プリセットは複数選択でき、自由記述と併用できる。 */
+/* 自由記述コメント欄。入力は任意で、記入しなくても判定ボタンで次へ進む
+   (必須にすると1件ごとに手数が増えて150件が回らなくなるため)。 */
 #reason-area {
   flex-shrink: 0;
-  padding: 0 10px 6px;
-}
-
-.preset-row {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 6px;
-}
-
-.preset-btn {
-  flex: 1;
-  padding: 8px 6px;
-  border-radius: 8px;
-  border: 1.5px solid var(--muted);
-  background: none;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.25;
-  transition: transform 0.08s;
-}
-
-.preset-btn:active { transform: scale(0.97); }
-
-.preset-btn.active {
-  background: #5a4520;
-  border-color: #c8963c;
-  color: #fff;
-  font-weight: 600;
+  padding: 0 10px 8px;
 }
 
 #note-input {
@@ -172,45 +144,14 @@ footer {
 #note-input::placeholder { color: var(--muted); opacity: 0.7; }
 #note-input:focus { outline: none; border-color: var(--accent); }
 
-/* 「流動性が微妙そう」はチャートの形の評価とは別の軸なので、o/x/? とは別行の
-   トグルにする。押しても次へ進まず、o/x/? を押した時に一緒に記録される。 */
-.flag-row {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 8px;
-}
-
-#thin-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 9px 18px;
-  border-radius: 999px;
-  border: 1.5px solid var(--muted);
-  background: none;
-  color: var(--muted);
-  font-size: 14px;
-  transition: transform 0.08s;
-}
-
-#thin-btn:active { transform: scale(0.96); }
-#thin-btn .mark { font-size: 17px; line-height: 1; }
-
-#thin-btn.active {
-  background: #1e6a8d;
-  border-color: #2f9ac9;
-  color: #fff;
-  font-weight: 600;
-}
-
 .button-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
 }
 
 .label-btn {
-  min-height: 68px;
+  min-height: 88px;
   border: none;
   border-radius: 12px;
   color: #fff;
@@ -224,13 +165,11 @@ footer {
 }
 
 .label-btn:active { transform: scale(0.96); }
-.label-btn .mark { font-size: 22px; line-height: 1; }
-.label-btn .text { font-size: 11px; white-space: nowrap; }
+.label-btn .mark { font-size: 30px; line-height: 1; }
+.label-btn .text { font-size: 15px; white-space: nowrap; }
 
 .label-btn.good { background: var(--good); }
-.label-btn.bad { background: var(--bad); }
-.label-btn.unclear { background: var(--unclear); }
-.label-btn.watch { background: var(--watch); }
+.label-btn.other { background: var(--unclear); }
 
 .sub-row {
   display: flex;
