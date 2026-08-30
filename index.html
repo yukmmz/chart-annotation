@@ -23,6 +23,15 @@
     <p id="subhint">薄そうなら💧も（形の評価とは別に記録）</p>
   </main>
 
+  <section id="reason-area">
+    <div class="preset-row">
+      <button class="preset-btn" data-reason="急上昇すぎて不安" type="button" aria-pressed="false">急上昇すぎて不安</button>
+      <button class="preset-btn" data-reason="マイナスが目立って不安" type="button" aria-pressed="false">マイナスが目立って不安</button>
+    </div>
+    <input id="note-input" type="text" inputmode="text" autocomplete="off"
+           placeholder="その他の理由（任意・微妙／わからない の時に）">
+  </section>
+
   <footer>
     <div class="flag-row">
       <button id="thin-btn" type="button" aria-pressed="false">
@@ -35,6 +44,9 @@
       </button>
       <button class="label-btn unclear" data-label="unclear" type="button">
         <span class="mark">？</span><span class="text">わからない</span>
+      </button>
+      <button class="label-btn watch" data-label="watch" type="button">
+        <span class="mark">⏳</span><span class="text">数日様子見</span>
       </button>
       <button class="label-btn good" data-label="good" type="button">
         <span class="mark">◯</span><span class="text">良い</span>

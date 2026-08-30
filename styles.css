@@ -8,10 +8,16 @@
   --good: #2e7d5b;
   --bad: #8c3a3a;
   --unclear: #4a5160;
+  --watch: #8a6d1f;
   --accent: #4c72b0;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+/* #app と #done-screen は display:flex を持つため、hidden属性だけでは隠れない
+   (CSSのdisplay指定がhidden属性の既定値 display:none を上書きしてしまう)。
+   この宣言が無いと、評価中も完了画面がページ下に描画されて縦スクロールが発生する。 */
+[hidden] { display: none !important; }
 
 html, body {
   margin: 0;
@@ -82,10 +88,12 @@ main {
 /* 縦に伸ばしすぎると値動きが誇張されて見えるため、おおむね 4:3 程度に収める
    (スマホ縦画面で flex:1 のまま伸ばすと 1:2 近くになり、判断を歪める)。
    min-heightで潰れすぎも防ぎ、画面が広い端末では余白ではなくチャートを大きくする。 */
+/* 理由入力エリアを追加したぶん、チャートの縦幅を詰める(2026-08-30、ユーザー了承済み)。
+   縦横比が極端に崩れると値動きの印象が変わるため、下限は残す。 */
 #chart-area {
   flex: 1;
-  min-height: min(75vw, 58dvh);
-  max-height: min(105vw, 72dvh);
+  min-height: min(62vw, 40dvh);
+  max-height: min(88vw, 52dvh);
   align-self: center;
   width: 100%;
   background: var(--panel);
@@ -114,6 +122,55 @@ footer {
   color: var(--muted);
   opacity: 0.75;
 }
+
+/* 「微妙」「わからない」を選んだ理由を残す欄。入力は任意で、記入しなくても
+   o/x/? を押せばそのまま次へ進む(理由を必須にすると1件ごとに手数が増えるため)。
+   プリセットは複数選択でき、自由記述と併用できる。 */
+#reason-area {
+  flex-shrink: 0;
+  padding: 0 10px 6px;
+}
+
+.preset-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.preset-btn {
+  flex: 1;
+  padding: 8px 6px;
+  border-radius: 8px;
+  border: 1.5px solid var(--muted);
+  background: none;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.25;
+  transition: transform 0.08s;
+}
+
+.preset-btn:active { transform: scale(0.97); }
+
+.preset-btn.active {
+  background: #5a4520;
+  border-color: #c8963c;
+  color: #fff;
+  font-weight: 600;
+}
+
+#note-input {
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: 8px;
+  border: 1.5px solid #2c333f;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+}
+
+#note-input::placeholder { color: var(--muted); opacity: 0.7; }
+#note-input:focus { outline: none; border-color: var(--accent); }
 
 /* 「流動性が微妙そう」はチャートの形の評価とは別の軸なので、o/x/? とは別行の
    トグルにする。押しても次へ進まず、o/x/? を押した時に一緒に記録される。 */
@@ -148,12 +205,12 @@ footer {
 
 .button-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
 }
 
 .label-btn {
-  min-height: 76px;
+  min-height: 68px;
   border: none;
   border-radius: 12px;
   color: #fff;
@@ -167,12 +224,13 @@ footer {
 }
 
 .label-btn:active { transform: scale(0.96); }
-.label-btn .mark { font-size: 26px; line-height: 1; }
-.label-btn .text { font-size: 13px; }
+.label-btn .mark { font-size: 22px; line-height: 1; }
+.label-btn .text { font-size: 11px; white-space: nowrap; }
 
 .label-btn.good { background: var(--good); }
 .label-btn.bad { background: var(--bad); }
 .label-btn.unclear { background: var(--unclear); }
+.label-btn.watch { background: var(--watch); }
 
 .sub-row {
   display: flex;

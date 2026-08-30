@@ -7,10 +7,14 @@
  */
 'use strict';
 
-// サンプルの中身を差し替えた際はバージョンを上げる(古いラベルが誤って混ざらないように)。
+// **サンプルの中身を差し替えた際はバージョンを上げること**(古いラベルが誤って混ざらないように)。
 // id は毎回 s001 から採番し直すため、キーを据え置くと前回のラベルが新しいチャートに
 // 紐付いてしまう。2026-08-30にサンプルをv2(損益で層化)へ差し替え、さらに流動性フィルタを
 // 緩めてサンプルを取り直した上で💧フラグを追加したのでv4に上げた。
+//
+// その後「数日様子見」ボタンと理由入力を追加したが、**サンプルは同一でスキーマの追加のみ**
+// (reasons/noteは任意、labelに値が増えただけ)なので、v4のまま据え置く。
+// 上げてしまうと作業中のラベルが消えるため。古い形式のエントリは読み出し側で補完している。
 const STORAGE_KEY = 'annot:v4:labels';
 const CURSOR_KEY = 'annot:v4:cursor';
 
@@ -18,10 +22,20 @@ const state = {
   samples: [],
   labels: {},
   cursor: 0,
-  // 現在のチャートに対する「流動性が微妙そう」フラグ。o/x/? を押した時に一緒に記録する。
-  // 形の良し悪しとは独立した軸なので、排他の4つ目のボタンにはしない
+  // 現在のチャートに対する「流動性が微妙そう」フラグ。判定ボタンを押した時に一緒に記録する。
+  // 形の良し悪しとは独立した軸なので、判定ボタンには含めない
   // (「形は良いが薄そう」を両方記録できるようにするため)。
   thin: false,
+  // 「微妙」「わからない」を選んだ理由。プリセット(複数可)と自由記述を併用できる。
+  // 入力は任意で、空のまま判定ボタンを押しても構わない。
+  reasons: [],
+  note: '',
+};
+
+// 判定ラベルは排他。'watch' は「良さそうだが上昇の終わり頃にも見えるので数日様子見したい」で、
+// good とも bad とも違う独立した判断として2026-08-30に追加した(ユーザー要望)。
+const LABEL_TEXT = {
+  good: '良い', bad: '微妙', unclear: 'わからない', watch: '数日様子見',
 };
 
 /* ---------- 永続化 ---------- */
@@ -119,15 +133,25 @@ function render() {
   document.getElementById('back-btn').disabled = state.cursor === 0;
 
   const existing = state.labels[sample.id];
-  // 既に評価済みのチャートに戻ってきたら、その時の💧の状態を復元する。
-  // 未評価ならフラグはオフから始める(前のチャートの状態を引きずらない)。
+  // 既に評価済みのチャートに戻ってきたら、その時の💧・理由を復元する。
+  // 未評価なら全てクリアから始める(前のチャートの入力を引きずらない)。
   state.thin = existing ? !!existing.thin : false;
+  state.reasons = existing && Array.isArray(existing.reasons) ? existing.reasons.slice() : [];
+  state.note = existing && typeof existing.note === 'string' ? existing.note : '';
   renderThinBtn();
-  setStatus(
-    existing
-      ? `記録済み: ${labelText(existing.label)}${existing.thin ? ' + 薄そう' : ''}（変更できます）`
-      : ''
-  );
+  renderReasons();
+
+  let status = '';
+  if (existing) {
+    const extras = [];
+    if (existing.thin) extras.push('薄そう');
+    if (existing.reasons && existing.reasons.length) extras.push(...existing.reasons);
+    if (existing.note) extras.push(existing.note);
+    status = `記録済み: ${labelText(existing.label)}`
+      + (extras.length ? `（${extras.join('・')}）` : '')
+      + ' 変更できます';
+  }
+  setStatus(status);
 }
 
 function renderThinBtn() {
@@ -141,8 +165,24 @@ function toggleThin() {
   renderThinBtn();
 }
 
+function renderReasons() {
+  document.querySelectorAll('.preset-btn').forEach((btn) => {
+    const on = state.reasons.includes(btn.dataset.reason);
+    btn.classList.toggle('active', on);
+    btn.setAttribute('aria-pressed', String(on));
+  });
+  document.getElementById('note-input').value = state.note;
+}
+
+function togglePreset(reason) {
+  const i = state.reasons.indexOf(reason);
+  if (i === -1) state.reasons.push(reason);
+  else state.reasons.splice(i, 1);
+  renderReasons();
+}
+
 function labelText(label) {
-  return { good: '良い', bad: '微妙', unclear: 'わからない' }[label] || label;
+  return LABEL_TEXT[label] || label;
 }
 
 function showDone() {
@@ -150,16 +190,19 @@ function showDone() {
   const done = document.getElementById('done-screen');
   done.hidden = false;
 
-  const counts = { good: 0, bad: 0, unclear: 0 };
+  const counts = { good: 0, bad: 0, unclear: 0, watch: 0 };
   let thin = 0;
+  let withReason = 0;
   for (const v of Object.values(state.labels)) {
     if (counts[v.label] !== undefined) counts[v.label]++;
     if (v.thin) thin++;
+    if ((v.reasons && v.reasons.length) || v.note) withReason++;
   }
   document.getElementById('done-summary').innerHTML =
     `${labeledCount()} 件を評価しました<br>` +
-    `良い ${counts.good} ／ 微妙 ${counts.bad} ／ わからない ${counts.unclear}<br>` +
-    `うち「流動性が微妙そう」 ${thin} 件<br>` +
+    `良い ${counts.good} ／ 数日様子見 ${counts.watch} ／ ` +
+    `わからない ${counts.unclear} ／ 微妙 ${counts.bad}<br>` +
+    `「流動性が微妙そう」 ${thin} 件 ／ 理由の記入 ${withReason} 件<br>` +
     `<br>下のボタンでJSONを保存して送ってください`;
 }
 
@@ -168,7 +211,15 @@ function showDone() {
 function applyLabel(label) {
   const sample = state.samples[state.cursor];
   if (!sample) return;
-  state.labels[sample.id] = { label, thin: state.thin, ts: new Date().toISOString() };
+  // 自由記述は入力欄から直接読む(1文字ごとにstateへ同期するより取りこぼしが無い)
+  const note = document.getElementById('note-input').value.trim();
+  state.labels[sample.id] = {
+    label,
+    thin: state.thin,
+    reasons: state.reasons.slice(),
+    note,
+    ts: new Date().toISOString(),
+  };
   state.cursor++;
   persist();
   render();
@@ -184,7 +235,7 @@ function goBack() {
 
 function download() {
   const payload = {
-    version: 'v2',
+    version: 'v3',
     exported_at: new Date().toISOString(),
     n_labeled: labeledCount(),
     labels: state.labels,
@@ -228,6 +279,13 @@ async function init() {
     btn.addEventListener('click', () => applyLabel(btn.dataset.label));
   });
   document.getElementById('thin-btn').addEventListener('click', toggleThin);
+  document.querySelectorAll('.preset-btn').forEach((btn) => {
+    btn.addEventListener('click', () => togglePreset(btn.dataset.reason));
+  });
+  // 入力中にキーボードを閉じられるよう、Enterでフォーカスを外す
+  document.getElementById('note-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') e.target.blur();
+  });
   document.getElementById('back-btn').addEventListener('click', goBack);
   document.getElementById('download-btn').addEventListener('click', download);
   document.getElementById('download-btn-2').addEventListener('click', download);
