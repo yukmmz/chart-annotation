@@ -7,9 +7,11 @@
  */
 'use strict';
 
-// サンプルの中身を差し替えた際はバージョンを上げる(古いラベルが誤って混ざらないように)
-const STORAGE_KEY = 'annot:v2:labels';
-const CURSOR_KEY = 'annot:v2:cursor';
+// サンプルの中身を差し替えた際はバージョンを上げる(古いラベルが誤って混ざらないように)。
+// id は毎回 s001 から採番し直すため、キーを据え置くと前回のラベルが新しいチャートに
+// 紐付いてしまう。2026-08-30にサンプルをv2(L通過集合を損益で層化)へ差し替えたのでv3に上げた。
+const STORAGE_KEY = 'annot:v3:labels';
+const CURSOR_KEY = 'annot:v3:cursor';
 
 const state = {
   samples: [],
@@ -155,7 +157,7 @@ function goBack() {
 
 function download() {
   const payload = {
-    version: 'v1',
+    version: 'v2',
     exported_at: new Date().toISOString(),
     n_labeled: labeledCount(),
     labels: state.labels,
