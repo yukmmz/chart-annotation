@@ -100,8 +100,11 @@ function renderChart(sample) {
 
   const parts = [];
 
-  // 判定に使った区間の網掛け（ローソク足より先に描いて背面に置く）
+  // 判定に使った区間の網掛け（ローソク足より先に描いて背面に置く）。
+  // 全面を覆う網掛けは「どこを見たか」の情報を持たないので描かない
+  // （beta は判定区間60日 = 表示本数なので、この分岐に入る）。
   for (const [type, from, to] of (sample.hl || [])) {
+    if (from <= 0 && to >= bars.length - 1) continue;
     const x0 = xAt(Math.max(0, from));
     const x1 = xAt(Math.min(bars.length, to + 1));
     parts.push(
