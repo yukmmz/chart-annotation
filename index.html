@@ -19,7 +19,8 @@
 
   <main>
     <div id="chart-area"></div>
-    <p id="hint">迷わず「良い」と言えますか？</p>
+    <p id="hint">この形ですか？</p>
+    <p id="kind-desc"></p>
   </main>
 
   <section id="reason-area">
@@ -29,15 +30,16 @@
 
   <footer>
     <div class="button-row">
-      <button class="label-btn other" data-label="other" type="button">
-        <span class="mark">—</span><span class="text">それ以外</span>
+      <button class="label-btn other" data-label="no" type="button">
+        <span class="mark">✕</span><span class="text">違う</span>
       </button>
-      <button class="label-btn good" data-label="good" type="button">
-        <span class="mark">◎</span><span class="text">迷わず良い</span>
+      <button class="label-btn good" data-label="match" type="button">
+        <span class="mark">◎</span><span class="text">この形だ</span>
       </button>
     </div>
     <div class="sub-row">
       <button id="back-btn" type="button">← 1つ戻る</button>
+      <span id="kind-badge"></span>
       <span id="status"></span>
     </div>
   </footer>

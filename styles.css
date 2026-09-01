@@ -216,3 +216,34 @@ footer {
 }
 
 #review-btn { background: var(--unclear); }
+
+/* --- v4（alpha/betaの形の判定）で追加 --- */
+
+/* 問いかけは「どの形か」を明確にしたいので、hintより一段強くする */
+#hint {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--fg, #e8eaed);
+}
+
+/* 形の説明。長いので小さく、2〜3行に収まる想定 */
+#kind-desc {
+  margin: 0 0 6px;
+  padding: 0 6px;
+  text-align: center;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* いま何の形を判定しているかを常に見えるようにする */
+#kind-badge {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #243244;
+  color: #cfd4da;
+}
+#kind-badge[data-kind="beta"] { background: #2c4034; }

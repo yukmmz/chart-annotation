@@ -1,18 +1,26 @@
 /**
  * チャート主観アノテーションアプリ。
  *
- * charts.json (匿名化済みの正規化OHLC) を読み込み、ローソク足をSVGで描画して
- * good / bad / unclear のラベルを収集する。ラベルはタップごとにlocalStorageへ
- * 同期保存するため、中断・リロードしても続きから再開できる。
+ * charts.json (匿名化済みの正規化OHLC) を読み込み、ローソク足をSVGで描画してラベルを収集する。
+ * ラベルはタップごとにlocalStorageへ同期保存するため、中断・リロードしても続きから再開できる。
+ *
+ * v4（2026-09-01）から、問うことが変わった。
+ * v1〜v3は「このチャートは良いか（買いたいか）」という価値判断を集めていたが、
+ * v4は**ユーザーが自分で言語化した2つの形（alpha / beta）に当てはまるか**を集める。
+ * 各サンプルは kind ("alpha" | "beta") を持ち、画面はその形の説明を出したうえで
+ * 「この形だ / 違う」を尋ねる。判定の観点を何度も切り替えずに済むよう、
+ * charts.json は alpha を全部並べてから beta を並べた順序になっている。
+ *
+ * hl（網掛け範囲）は「条件の判定に使った区間」で、PDF版と同じ配色にしてある。
+ * どこを見て機械が判定したかが分かるので、ズレている場合に指摘しやすい。
  */
 'use strict';
 
 // **サンプルの中身を差し替えた際はバージョンを上げること**(古いラベルが誤って混ざらないように)。
 // id は毎回 s001 から採番し直すため、キーを据え置くと前回のラベルが新しいチャートに
-// 紐付いてしまう。2026-08-31にサンプルをv3(ユーザーの言語化した条件で母集団を絞る)へ
-// 差し替え、判定も2択に簡素化したのでv5に上げた。
-const STORAGE_KEY = 'annot:v5:labels';
-const CURSOR_KEY = 'annot:v5:cursor';
+// 紐付いてしまう。2026-09-01にサンプルをv4（alpha/betaの形の判定）へ差し替えたのでv6に上げた。
+const STORAGE_KEY = 'annot:v6:labels';
+const CURSOR_KEY = 'annot:v6:cursor';
 
 const state = {
   samples: [],
@@ -22,11 +30,27 @@ const state = {
   note: '',
 };
 
-// 判定は2択(2026-08-31、ユーザー要望でv2の4値から簡素化)。
-// 'good' は「迷わず良い」で、迷った時点で 'other' に入る点が前回までと違う。
+// 判定は2択。「この形だ」は迷いなく当てはまる場合だけに使う。
 const LABEL_TEXT = {
-  good: '迷わず良い', other: 'それ以外',
+  match: 'この形だ', no: '違う',
 };
+
+// 形ごとの説明。ユーザー本人の言葉をそのまま短くしたもの。
+const KIND_INFO = {
+  alpha: {
+    name: 'alpha',
+    desc: '前半は横ばい → 直近5〜20日をほぼ単調に上昇。'
+      + '多くの日で前日高値を更新。直前2〜3日に異常な急騰なし。',
+  },
+  beta: {
+    name: 'beta',
+    desc: '60日間ほぼ単調・一定ペースで上がり続けている。'
+      + '多くの日で前日高値を更新。直前2〜3日に異常な急騰なし。',
+  },
+};
+
+// 網掛けの色（PDF版と同じ）
+const HL_COLOR = { pre: '#243244', rise: '#2c4034' };
 
 /* ---------- 永続化 ---------- */
 
@@ -72,8 +96,20 @@ function renderChart(sample) {
   const y = (v) => padY + (H - 2 * padY) * (1 - (Math.log(v) - logLo) / span);
   const step = (W - 2 * padX) / bars.length;
   const bodyW = Math.max(1, step * 0.68);
+  const xAt = (i) => padX + step * i;
 
   const parts = [];
+
+  // 判定に使った区間の網掛け（ローソク足より先に描いて背面に置く）
+  for (const [type, from, to] of (sample.hl || [])) {
+    const x0 = xAt(Math.max(0, from));
+    const x1 = xAt(Math.min(bars.length, to + 1));
+    parts.push(
+      `<rect x="${x0.toFixed(1)}" y="0" width="${Math.max(0, x1 - x0).toFixed(1)}"`
+      + ` height="${H}" fill="${HL_COLOR[type] || '#222'}"/>`
+    );
+  }
+
   for (let i = 0; i < bars.length; i++) {
     const [o, h, l, c] = bars[i];
     const cx = padX + step * (i + 0.5);
@@ -115,11 +151,20 @@ function render() {
   const sample = state.samples[state.cursor];
   renderChart(sample);
 
-  const done = labeledCount();
+  const info = KIND_INFO[sample.kind] || { name: sample.kind || '?', desc: '' };
+  document.getElementById('kind-badge').textContent = info.name;
+  document.getElementById('kind-badge').dataset.kind = sample.kind || '';
+  document.getElementById('hint').textContent = `${info.name} の形ですか？`;
+  document.getElementById('kind-desc').textContent = info.desc;
+
+  // その形が何件目/全何件かを出す（残りの見通しが立つように）
+  const sameKind = state.samples.filter((s) => s.kind === sample.kind);
+  const idxInKind = sameKind.findIndex((s) => s.id === sample.id) + 1;
   document.getElementById('counter').textContent =
-    `${state.cursor + 1} / ${state.samples.length}`;
+    `${info.name} ${idxInKind} / ${sameKind.length}　（全体 ${state.cursor + 1} / ${state.samples.length}）`;
+
   document.getElementById('progress-bar').style.width =
-    `${(done / state.samples.length) * 100}%`;
+    `${(labeledCount() / state.samples.length) * 100}%`;
   document.getElementById('back-btn').disabled = state.cursor === 0;
 
   const existing = state.labels[sample.id];
@@ -143,15 +188,21 @@ function showDone() {
   const done = document.getElementById('done-screen');
   done.hidden = false;
 
-  const counts = { good: 0, other: 0 };
+  const byKind = {};
   let withNote = 0;
-  for (const v of Object.values(state.labels)) {
-    if (counts[v.label] !== undefined) counts[v.label]++;
+  for (const s of state.samples) {
+    const v = state.labels[s.id];
+    if (!v) continue;
+    const k = s.kind || '?';
+    byKind[k] = byKind[k] || { match: 0, no: 0 };
+    if (byKind[k][v.label] !== undefined) byKind[k][v.label]++;
     if (v.note) withNote++;
   }
+  const lines = Object.entries(byKind).map(
+    ([k, c]) => `${k}: この形だ ${c.match} ／ 違う ${c.no}`);
   document.getElementById('done-summary').innerHTML =
     `${labeledCount()} 件を評価しました<br>` +
-    `迷わず良い ${counts.good} ／ それ以外 ${counts.other}<br>` +
+    lines.join('<br>') + '<br>' +
     `コメントの記入 ${withNote} 件<br>` +
     `<br>下のボタンでJSONを保存して送ってください`;
 }
@@ -179,7 +230,7 @@ function goBack() {
 
 function download() {
   const payload = {
-    version: 'v3',
+    version: 'v4',
     exported_at: new Date().toISOString(),
     n_labeled: labeledCount(),
     labels: state.labels,
@@ -190,7 +241,7 @@ function download() {
   const d = new Date();
   const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
   a.href = url;
-  a.download = `chart_labels_${stamp}.json`;
+  a.download = `shape_labels_${stamp}.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
