@@ -11,6 +11,7 @@
 <div id="app">
   <header>
     <div class="progress-row">
+      <span id="kind-badge"></span>
       <span id="counter">- / -</span>
       <button id="download-btn" type="button">結果を保存</button>
     </div>
@@ -39,9 +40,10 @@
     </div>
     <div class="sub-row">
       <button id="back-btn" type="button">← 1つ戻る</button>
-      <span id="kind-badge"></span>
-      <span id="status"></span>
+      <button id="clear-btn" type="button">このラベルを消す</button>
+      <button id="clear-all-btn" class="danger" type="button">全消去</button>
     </div>
+    <div class="status-row"><span id="status"></span></div>
   </footer>
 </div>
 
@@ -50,6 +52,7 @@
   <p id="done-summary"></p>
   <button id="download-btn-2" type="button">結果をダウンロード</button>
   <button id="review-btn" type="button">最初から見直す</button>
+  <button id="clear-all-btn-2" class="danger" type="button">全てのラベルを消去</button>
 </div>
 
 <script src="app.js"></script>

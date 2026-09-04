@@ -18,9 +18,27 @@
 
 // **サンプルの中身を差し替えた際はバージョンを上げること**(古いラベルが誤って混ざらないように)。
 // id は毎回 s001 から採番し直すため、キーを据え置くと前回のラベルが新しいチャートに
-// 紐付いてしまう。2026-09-01にサンプルをv4（alpha/betaの形の判定）へ差し替えたのでv6に上げた。
-const STORAGE_KEY = 'annot:v6:labels';
-const CURSOR_KEY = 'annot:v6:cursor';
+// 紐付いてしまう。2026-09-01にサンプルをv4（alpha/betaの形の判定）へ差し替えたのでv6に上げ、
+// 2026-09-04に「付けたラベルを一旦削除して」というユーザー要望でv7に上げた
+// （サンプルは同じだが、キーを上げるのが取りこぼしのない消去になる）。
+const STORAGE_KEY = 'annot:v7:labels';
+const CURSOR_KEY = 'annot:v7:cursor';
+
+// 古いバージョンのキーは端末に残しても使わないので、起動時に消しておく
+// （容量を食うのと、開発中に「どのキーが生きているのか」が分からなくなるのを避ける）。
+function purgeOldKeys() {
+  try {
+    const keep = new Set([STORAGE_KEY, CURSOR_KEY]);
+    const stale = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && /^annot:v\d+:(labels|cursor)$/.test(k) && !keep.has(k)) stale.push(k);
+    }
+    stale.forEach((k) => localStorage.removeItem(k));
+  } catch (e) {
+    /* localStorageが使えない環境でも起動は妨げない */
+  }
+}
 
 const state = {
   samples: [],
@@ -171,6 +189,9 @@ function render() {
   document.getElementById('back-btn').disabled = state.cursor === 0;
 
   const existing = state.labels[sample.id];
+  // 消すものが無いときにボタンを押せると「押したのに何も起きない」になるので無効化する
+  document.getElementById('clear-btn').disabled = !existing;
+  document.getElementById('clear-all-btn').disabled = labeledCount() === 0;
   // 既に評価済みのチャートに戻ってきたらコメントを復元する。
   // 未評価ならクリアから始める(前のチャートの入力を引きずらない)。
   state.note = existing && typeof existing.note === 'string' ? existing.note : '';
@@ -231,6 +252,33 @@ function goBack() {
   }
 }
 
+/** いま表示しているチャートのラベルを消す（そのチャートに留まる）。 */
+function clearCurrent() {
+  const sample = state.samples[state.cursor];
+  if (!sample || !state.labels[sample.id]) return;
+  delete state.labels[sample.id];
+  persist();
+  render();
+  setStatus('このチャートのラベルを消しました');
+}
+
+/** 付けたラベルを全部消して最初から。誤爆すると作業が丸ごと消えるので必ず確認する。 */
+function clearAll() {
+  const n = labeledCount();
+  if (n === 0) {
+    setStatus('消すラベルがありません');
+    return;
+  }
+  if (!window.confirm(`付けたラベル ${n} 件をすべて消して最初からやり直します。よろしいですか？`)) {
+    return;
+  }
+  state.labels = {};
+  state.cursor = 0;
+  persist();
+  render();
+  setStatus(`${n} 件のラベルを消しました`);
+}
+
 function download() {
   const payload = {
     version: 'v4',
@@ -254,6 +302,7 @@ function download() {
 /* ---------- 起動 ---------- */
 
 async function init() {
+  purgeOldKeys();
   loadStored();
 
   let data;
@@ -281,6 +330,9 @@ async function init() {
     if (e.key === 'Enter') e.target.blur();
   });
   document.getElementById('back-btn').addEventListener('click', goBack);
+  document.getElementById('clear-btn').addEventListener('click', clearCurrent);
+  document.getElementById('clear-all-btn').addEventListener('click', clearAll);
+  document.getElementById('clear-all-btn-2').addEventListener('click', clearAll);
   document.getElementById('download-btn').addEventListener('click', download);
   document.getElementById('download-btn-2').addEventListener('click', download);
   document.getElementById('review-btn').addEventListener('click', () => {

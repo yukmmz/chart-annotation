@@ -247,3 +247,37 @@ footer {
   color: #cfd4da;
 }
 #kind-badge[data-kind="beta"] { background: #2c4034; }
+
+/* --- ラベル削除（2026-09-04、ユーザー要望） --- */
+
+/* 消去系は back-btn と同じ控えめな見た目に揃える（誤爆を誘わないため目立たせない） */
+#clear-btn, #clear-all-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 13px;
+  padding: 4px 8px;
+}
+#clear-btn:disabled, #clear-all-btn:disabled { opacity: 0.3; }
+
+/* 全消去は作業が丸ごと消えるので、押せる状態のときだけ赤くして区別する */
+#clear-all-btn.danger:not(:disabled) { color: #ef5350; }
+
+#clear-all-btn-2.danger {
+  background: none;
+  border: 1px solid #5a3336;
+  color: #ef5350;
+  font-size: 14px;
+  padding: 8px 16px;
+  border-radius: 8px;
+}
+
+/* status は sub-row から独立させた（ボタンが3つ並ぶと押し出されるため） */
+.status-row {
+  min-height: 18px;
+  margin-top: 2px;
+  text-align: center;
+}
+
+/* kind-badge をヘッダーへ移したので、sub-row 用の余白指定は不要 */
+.progress-row #kind-badge { margin-right: 8px; }
