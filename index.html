@@ -20,7 +20,7 @@
 
   <main>
     <div id="chart-area"></div>
-    <p id="hint">この形ですか？</p>
+    <p id="hint">この上がり方はどちらの型ですか？</p>
     <p id="kind-desc"></p>
   </main>
 
@@ -31,11 +31,19 @@
 
   <footer>
     <div class="button-row">
-      <button class="label-btn other" data-label="no" type="button">
-        <span class="mark">✕</span><span class="text">違う</span>
+      <button class="label-btn good" data-label="R" type="button">
+        <span class="mark">／</span><span class="text">R ランプ</span>
       </button>
-      <button class="label-btn good" data-label="match" type="button">
-        <span class="mark">◎</span><span class="text">この形だ</span>
+      <button class="label-btn good" data-label="S" type="button">
+        <span class="mark">⌁</span><span class="text">S 階段</span>
+      </button>
+    </div>
+    <div class="button-row">
+      <button class="label-btn other" data-label="either" type="button">
+        <span class="mark">≈</span><span class="text">どちらでも</span>
+      </button>
+      <button class="label-btn other" data-label="neither" type="button">
+        <span class="mark">✕</span><span class="text">どちらでもない</span>
       </button>
     </div>
     <div class="sub-row">

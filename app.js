@@ -4,12 +4,23 @@
  * charts.json (匿名化済みの正規化OHLC) を読み込み、ローソク足をSVGで描画してラベルを収集する。
  * ラベルはタップごとにlocalStorageへ同期保存するため、中断・リロードしても続きから再開できる。
  *
- * v4（2026-09-01）から、問うことが変わった。
- * v1〜v3は「このチャートは良いか（買いたいか）」という価値判断を集めていたが、
- * v4は**ユーザーが自分で言語化した2つの形（alpha / beta）に当てはまるか**を集める。
- * 各サンプルは kind ("alpha" | "beta") を持ち、画面はその形の説明を出したうえで
- * 「この形だ / 違う」を尋ねる。判定の観点を何度も切り替えずに済むよう、
- * charts.json は alpha を全部並べてから beta を並べた順序になっている。
+ * 問うことは2回変わっている。
+ *
+ * - v1〜v3: 「このチャートは良いか（買いたいか）」という価値判断
+ * - v4: 「ユーザーが言語化した2つの形（alpha / beta）に当てはまるか」の2択
+ * - **v5（2026-09-17）: 「上がり方がどちらの型か」の4択**
+ *
+ * v5の目的は**買いと売りのタイミングを型ごとに変えること**。ユーザーの言葉:
+ *
+ * > 買うタイミングと売るタイミングの定義が1種類じゃ不十分と思ったのでこの案を出した
+ *
+ * 4つの選択肢は R / S / どちらでも良い / どちらでもない。3つめ（どちらでも良い）を
+ * 置いたのはユーザーの明示的な要望による。境目のチャートを無理に二分させると、
+ * **ラベルの揺れが型の定義そのものを汚す**。「どちらでも良い」に逃がしておけば、
+ * R・Sそれぞれの純度が保たれ、境界の位置はバックテスト側で決められる。
+ *
+ * 判定の観点を何度も切り替えずに済むよう、charts.json は機械がRと予測したものと
+ * Sと予測したものを混ぜて並べる（ただし予測はユーザーに見せない。見せると引きずられる）。
  *
  * hl（網掛け範囲）は「条件の判定に使った区間」で、PDF版と同じ配色にしてある。
  * どこを見て機械が判定したかが分かるので、ズレている場合に指摘しやすい。
@@ -19,10 +30,10 @@
 // **サンプルの中身を差し替えた際はバージョンを上げること**(古いラベルが誤って混ざらないように)。
 // id は毎回 s001 から採番し直すため、キーを据え置くと前回のラベルが新しいチャートに
 // 紐付いてしまう。2026-09-01にサンプルをv4（alpha/betaの形の判定）へ差し替えたのでv6に上げ、
-// 2026-09-04に「付けたラベルを一旦削除して」というユーザー要望でv7に上げた
-// （サンプルは同じだが、キーを上げるのが取りこぼしのない消去になる）。
-const STORAGE_KEY = 'annot:v7:labels';
-const CURSOR_KEY = 'annot:v7:cursor';
+// 2026-09-04に「付けたラベルを一旦削除して」というユーザー要望でv7に上げ、
+// 2026-09-17にv5サンプル（R/Sの型判定・4択）へ差し替えたのでv8に上げた。
+const STORAGE_KEY = 'annot:v8:labels';
+const CURSOR_KEY = 'annot:v8:cursor';
 
 // 古いバージョンのキーは端末に残しても使わないので、起動時に消しておく
 // （容量を食うのと、開発中に「どのキーが生きているのか」が分からなくなるのを避ける）。
@@ -48,24 +59,26 @@ const state = {
   note: '',
 };
 
-// 判定は2択。「この形だ」は迷いなく当てはまる場合だけに使う。
+// 判定は4択。R と S は**迷いなく言い切れる場合だけ**に使う。
+// 迷ったら「どちらでも」に逃がしてよい（そのためにこの選択肢がある）。
 const LABEL_TEXT = {
-  match: 'この形だ', no: '違う',
+  R: 'R（ランプ状）',
+  S: 'S（階段状）',
+  either: 'どちらでも',
+  neither: 'どちらでもない',
 };
 
-// 形ごとの説明。ユーザー本人の言葉をそのまま短くしたもの。
-const KIND_INFO = {
-  alpha: {
-    name: 'alpha',
-    desc: '前半は横ばい → 直近5〜20日をほぼ単調に上昇。'
-      + '多くの日で前日高値を更新。直前2〜3日に異常な急騰なし。',
-  },
-  beta: {
-    name: 'beta',
-    desc: '60日間ほぼ単調・一定ペースで上がり続けている。'
-      + '多くの日で前日高値を更新。直前2〜3日に異常な急騰なし。',
-  },
-};
+// 4択の説明。画面下に常時出しておく（毎回思い出さなくて済むように）。
+const CHOICE_DESC = [
+  ['R', '上下の波がほとんど無く、ほぼ一直線に上がっている'],
+  ['S', '「少し上げて少し下げる」を繰り返しながら、階段状に上がっている'],
+  ['either', 'どちらとも言える／見分けがつかない（迷ったらこれ）'],
+  ['neither', 'どちらでもない（そもそも上がり方が汚い・上がっていない）'],
+];
+
+// v5 は形（alpha/beta）ではなく**上がり方の型**を問うので、kind による説明の出し分けは
+// しない。ただし charts.json の kind は分析側で使うので、そのまま持ち回る。
+const KIND_INFO = {};
 
 // 網掛けの色（PDF版と同じ）
 const HL_COLOR = { pre: '#243244', rise: '#2c4034' };
@@ -172,17 +185,16 @@ function render() {
   const sample = state.samples[state.cursor];
   renderChart(sample);
 
-  const info = KIND_INFO[sample.kind] || { name: sample.kind || '?', desc: '' };
-  document.getElementById('kind-badge').textContent = info.name;
-  document.getElementById('kind-badge').dataset.kind = sample.kind || '';
-  document.getElementById('hint').textContent = `${info.name} の形ですか？`;
-  document.getElementById('kind-desc').textContent = info.desc;
+  // **機械がどちらと予測したかは表示しない**（表示すると判断が引きずられ、
+  // 境界を引き直すという目的が果たせなくなる）。バッジは進捗だけを出す。
+  document.getElementById('kind-badge').textContent = '上がり方の型';
+  document.getElementById('kind-badge').dataset.kind = '';
+  document.getElementById('hint').textContent = 'この上がり方はどちらの型ですか？';
+  document.getElementById('kind-desc').innerHTML = CHOICE_DESC
+    .map(([k, d]) => `<b>${LABEL_TEXT[k]}</b>: ${d}`).join('<br>');
 
-  // その形が何件目/全何件かを出す（残りの見通しが立つように）
-  const sameKind = state.samples.filter((s) => s.kind === sample.kind);
-  const idxInKind = sameKind.findIndex((s) => s.id === sample.id) + 1;
   document.getElementById('counter').textContent =
-    `${info.name} ${idxInKind} / ${sameKind.length}　（全体 ${state.cursor + 1} / ${state.samples.length}）`;
+    `${state.cursor + 1} / ${state.samples.length}`;
 
   document.getElementById('progress-bar').style.width =
     `${(labeledCount() / state.samples.length) * 100}%`;
@@ -212,18 +224,16 @@ function showDone() {
   const done = document.getElementById('done-screen');
   done.hidden = false;
 
-  const byKind = {};
+  const counts = { R: 0, S: 0, either: 0, neither: 0 };
   let withNote = 0;
   for (const s of state.samples) {
     const v = state.labels[s.id];
     if (!v) continue;
-    const k = s.kind || '?';
-    byKind[k] = byKind[k] || { match: 0, no: 0 };
-    if (byKind[k][v.label] !== undefined) byKind[k][v.label]++;
+    if (counts[v.label] !== undefined) counts[v.label]++;
     if (v.note) withNote++;
   }
-  const lines = Object.entries(byKind).map(
-    ([k, c]) => `${k}: この形だ ${c.match} ／ 違う ${c.no}`);
+  const lines = Object.entries(counts).map(
+    ([k, c]) => `${LABEL_TEXT[k]}: ${c} 件`);
   document.getElementById('done-summary').innerHTML =
     `${labeledCount()} 件を評価しました<br>` +
     lines.join('<br>') + '<br>' +
@@ -281,7 +291,7 @@ function clearAll() {
 
 function download() {
   const payload = {
-    version: 'v4',
+    version: 'v5',
     exported_at: new Date().toISOString(),
     n_labeled: labeledCount(),
     labels: state.labels,
@@ -292,7 +302,7 @@ function download() {
   const d = new Date();
   const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
   a.href = url;
-  a.download = `shape_labels_${stamp}.json`;
+  a.download = `type_labels_${stamp}.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
