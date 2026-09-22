@@ -31,9 +31,10 @@
 // id は毎回 s001 から採番し直すため、キーを据え置くと前回のラベルが新しいチャートに
 // 紐付いてしまう。2026-09-01にサンプルをv4（alpha/betaの形の判定）へ差し替えたのでv6に上げ、
 // 2026-09-04に「付けたラベルを一旦削除して」というユーザー要望でv7に上げ、
-// 2026-09-17にv5サンプル（R/Sの型判定・4択）へ差し替えたのでv8に上げた。
-const STORAGE_KEY = 'annot:v8:labels';
-const CURSOR_KEY = 'annot:v8:cursor';
+// 2026-09-17にv5サンプル（R/Sの型判定・4択）へ差し替えたのでv8に上げ、
+// 2026-09-22にv6サンプル（検知の遅れで層化・歩留まり条件つき）へ差し替えたのでv9に上げた。
+const STORAGE_KEY = 'annot:v9:labels';
+const CURSOR_KEY = 'annot:v9:cursor';
 
 // 古いバージョンのキーは端末に残しても使わないので、起動時に消しておく
 // （容量を食うのと、開発中に「どのキーが生きているのか」が分からなくなるのを避ける）。
@@ -73,7 +74,7 @@ const CHOICE_DESC = [
   ['R', '上下の波がほとんど無く、ほぼ一直線に上がっている'],
   ['S', '「少し上げて少し下げる」を繰り返しながら、階段状に上がっている'],
   ['either', 'どちらとも言える／見分けがつかない（迷ったらこれ）'],
-  ['neither', 'どちらでもない（そもそも上がり方が汚い・上がっていない）'],
+  ['neither', 'この形では買わない（上がり方が汚い・買う気にならない）'],
 ];
 
 // v5 は形（alpha/beta）ではなく**上がり方の型**を問うので、kind による説明の出し分けは
@@ -291,7 +292,7 @@ function clearAll() {
 
 function download() {
   const payload = {
-    version: 'v5',
+    version: 'v6',
     exported_at: new Date().toISOString(),
     n_labeled: labeledCount(),
     labels: state.labels,
